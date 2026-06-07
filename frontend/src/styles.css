@@ -1,0 +1,94 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  background: #030712;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background: #030712;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+.glass {
+  background: linear-gradient(145deg, rgba(15, 23, 42, 0.78), rgba(2, 6, 23, 0.62));
+  backdrop-filter: blur(24px) saturate(140%);
+}
+
+.noise {
+  opacity: 0.28;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 42px 42px;
+}
+
+.field span {
+  display: block;
+  margin-bottom: 0.45rem;
+  color: rgb(148 163 184);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.field div {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.055);
+  border-radius: 1rem;
+  padding: 0.85rem 0.95rem;
+  color: rgb(153 246 228);
+  transition: border-color 180ms ease, background 180ms ease;
+}
+
+.field div:focus-within {
+  border-color: rgba(94, 234, 212, 0.45);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.field input {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: white;
+}
+
+.field input::placeholder {
+  color: rgb(100 116 139);
+}
+
+input[type='radio'] {
+  accent-color: #5eead4;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.28);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(2, 6, 23, 0.4);
+}
