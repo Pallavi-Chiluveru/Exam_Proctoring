@@ -6,6 +6,26 @@ import App from './App.jsx';
 import { AuthProvider } from './context/AuthContext.jsx';
 import './styles.css';
 
+// Suppress known library warnings/logs to keep console clean
+const originalWarn = console.warn;
+console.warn = (...args) => {
+  if (args[0]?.includes?.('Platform browser has already been set')) return;
+  originalWarn(...args);
+};
+
+const originalLog = console.log;
+console.log = (...args) => {
+  if (args[0]?.includes?.('Download the React DevTools')) return;
+  originalLog(...args);
+};
+
+// Also React DevTools sometimes uses console.info
+const originalInfo = console.info;
+console.info = (...args) => {
+  if (args[0]?.includes?.('Download the React DevTools')) return;
+  originalInfo(...args);
+};
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>

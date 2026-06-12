@@ -1,20 +1,31 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Eye, Fingerprint, LockKeyhole, Mail, ShieldCheck, Sparkles } from 'lucide-react';
+import { Eye, EyeOff, Fingerprint, LockKeyhole, Mail, ShieldCheck, Sparkles } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Button, Glass, Page } from '../components/ui';
 
 export default function Login() {
   const { login, register, loading } = useAuth();
   const [mode, setMode] = useState('login');
-  const [role, setRole] = useState('student');
-  const [form, setForm] = useState({ name: '', email: 'student@aegis.ai', password: 'password123' });
+  const [form, setForm] = useState({ name: '', email: '', password: '' });
+  const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState({});
+
+  function validate() {
+    const newErrors = {};
+    if (mode === 'register' && !form.name.trim()) newErrors.name = 'Name is required';
+    if (!form.email.trim() || !/^\S+@\S+\.\S+$/.test(form.email)) newErrors.email = 'Invalid Email Address';
+    if (form.password.length < 6) newErrors.password = 'Password must be at least 6 characters';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  }
 
   function submit(event) {
     event.preventDefault();
+    if (!validate()) return;
     const fingerprint = `${navigator.userAgent}-${screen.width}x${screen.height}`;
     if (mode === 'login') login({ ...form, fingerprint });
-    else register({ ...form, role, fingerprint });
+    else register({ ...form, role: 'student', fingerprint });
   }
 
   return (
@@ -25,8 +36,8 @@ export default function Login() {
             <ShieldCheck className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-lg font-semibold">Aegis AI</p>
-            <p className="text-sm text-slate-400">Next-gen exam integrity cloud</p>
+            <p className="text-lg font-semibold">ProctorX</p>
+            <p className="text-sm text-slate-400">Secure AI Assessment</p>
           </div>
         </div>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-3xl py-14">
@@ -50,36 +61,42 @@ export default function Login() {
         <Glass className="w-full max-w-md p-6 sm:p-8">
           <div className="mb-6">
             <p className="text-sm text-slate-400">{mode === 'login' ? 'Welcome back' : 'Create secure identity'}</p>
-            <h2 className="mt-1 text-3xl font-semibold tracking-tight">{mode === 'login' ? 'Sign in to Aegis' : 'Join Aegis Cloud'}</h2>
+            <h2 className="mt-1 text-3xl font-semibold tracking-tight">{mode === 'login' ? 'Sign in to ProctorX' : 'Join ProctorX'}</h2>
           </div>
           <form onSubmit={submit} className="space-y-4">
             {mode === 'register' ? (
-              <label className="field">
+              <label className={`field ${errors.name ? 'has-error' : ''}`}>
                 <span>Name</span>
-                <div><Fingerprint className="h-4 w-4" /><input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="Your name" /></div>
+                <div>
+                  <Fingerprint className="h-4 w-4 opacity-70" />
+                  <input value={form.name} onChange={(event) => { setForm({ ...form, name: event.target.value }); setErrors({ ...errors, name: null }); }} placeholder="Your name" />
+                </div>
+                {errors.name && <p className="mt-1 text-xs text-red-400">{errors.name}</p>}
               </label>
             ) : null}
-            <label className="field">
-              <span>Email</span>
-              <div><Mail className="h-4 w-4" /><input value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} placeholder="student@aegis.ai" /></div>
-            </label>
-            <label className="field">
-              <span>Password</span>
-              <div><LockKeyhole className="h-4 w-4" /><input type="password" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} /></div>
-            </label>
-            {mode === 'register' ? (
-              <div className="grid grid-cols-2 gap-2 rounded-2xl border border-white/10 bg-white/5 p-1">
-                {['student', 'admin'].map((item) => (
-                  <button type="button" key={item} onClick={() => setRole(item)} className={`rounded-xl px-3 py-2 text-sm font-semibold capitalize transition ${role === item ? 'bg-white text-slate-950' : 'text-slate-400'}`}>{item}</button>
-                ))}
+            <label className={`field ${errors.email ? 'has-error' : ''}`}>
+              <span>Email Address</span>
+              <div>
+                <Mail className="h-4 w-4 opacity-70" />
+                <input value={form.email} onChange={(event) => { setForm({ ...form, email: event.target.value }); setErrors({ ...errors, email: null }); }} placeholder={mode === 'login' ? 'Email Address' : 'Enter your email address'} />
               </div>
-            ) : null}
-            <Button className="w-full" loading={loading}>{mode === 'login' ? 'Enter dashboard' : 'Create account'}</Button>
+              {errors.email && <p className="mt-1 text-xs text-red-400">{errors.email}</p>}
+            </label>
+            <label className={`field ${errors.password ? 'has-error' : ''}`}>
+              <span>Password</span>
+              <div>
+                <LockKeyhole className="h-4 w-4 opacity-70" />
+                <input type={showPassword ? 'text' : 'password'} value={form.password} onChange={(event) => { setForm({ ...form, password: event.target.value }); setErrors({ ...errors, password: null }); }} placeholder="••••••••" />
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="ml-auto text-slate-400 hover:text-white transition-colors focus:outline-none">
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              {errors.password && <p className="mt-1 text-xs text-red-400">{errors.password}</p>}
+            </label>
+            <Button className="w-full h-[46px] transition-all hover:shadow-[0_0_15px_rgba(94,234,212,0.4)]" loading={loading}>
+              {loading ? (mode === 'login' ? 'Signing In...' : 'Creating Account...') : (mode === 'login' ? 'Sign In' : 'Create Account')}
+            </Button>
           </form>
-          <div className="mt-5 grid grid-cols-2 gap-2">
-            <Button variant="ghost" onClick={() => setForm({ ...form, email: 'student@aegis.ai' })}><Eye className="h-4 w-4" /> Student</Button>
-            <Button variant="ghost" onClick={() => setForm({ ...form, email: 'admin@aegis.ai' })}><Eye className="h-4 w-4" /> Admin</Button>
-          </div>
           <button className="mt-5 w-full text-sm text-slate-400 hover:text-white" onClick={() => setMode(mode === 'login' ? 'register' : 'login')}>
             {mode === 'login' ? 'Need an account? Register' : 'Already have an account? Sign in'}
           </button>

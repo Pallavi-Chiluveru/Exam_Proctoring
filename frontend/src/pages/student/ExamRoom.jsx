@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import Editor from '@monaco-editor/react';
 import toast from 'react-hot-toast';
 import { AlertTriangle, CheckCircle2, Clock, Eye, Maximize2, Mic, MonitorUp, Send, Video } from 'lucide-react';
@@ -8,28 +8,63 @@ import { Button, Glass, Page, StatusPill } from '../../components/ui';
 import { api, demo } from '../../services/api';
 import { getSocket } from '../../services/socket';
 import { useProctoring } from '../../hooks/useProctoring';
+import { ExamLockdownService } from '../../components/exam/ExamLockdownService';
 
 export default function ExamRoom() {
   const { id } = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
+
+  // Enforce verification completion
+  useEffect(() => {
+    if (!location.state?.verified) {
+      toast.error('You must complete the pre-exam verification first.');
+      navigate(`/verification/${id}`, { replace: true });
+    }
+  }, [location, navigate, id]);
   const [exam, setExam] = useState(demo.exams[0]);
   const [session, setSession] = useState({ _id: 'demo-session', proctor: { suspicionScore: 12 } });
   const [active, setActive] = useState(0);
   const [answers, setAnswers] = useState({});
   const [seconds, setSeconds] = useState(120 * 60);
   const [violations, setViolations] = useState([]);
+  const [locked, setLocked] = useState(false);
 
   const reportViolation = useCallback(
     async (type, metadata) => {
-      const item = { _id: crypto.randomUUID(), type, severity: Math.round((metadata?.confidence || 0.75) * 10), message: type.replaceAll('_', ' '), createdAt: new Date().toISOString() };
+      if (!session._id || session._id === 'demo-session' || locked) return;
+      const { webcamEvidence, ...details } = metadata || {};
+      const item = { _id: crypto.randomUUID(), type, riskAdded: 0, message: type.replaceAll('_', ' '), createdAt: new Date().toISOString() };
       setViolations((current) => [item, ...current].slice(0, 8));
-      await api.post(`/sessions/${session._id}/violations`, { type, metadata }).catch(() => null);
-      toast.error(`Violation detected: ${item.message}`);
+      const response = await api.post(`/sessions/${session._id}/violations`, {
+        type,
+        metadata: details,
+        webcamEvidence,
+      }).catch((error) => error.response);
+      if (!response?.data) return;
+      if (response.data.violation) {
+        setViolations((current) => [response.data.violation, ...current.filter((entry) => entry._id !== item._id)].slice(0, 8));
+      }
+      if (typeof response.data.riskScore === 'number') {
+        setSession((current) => ({
+          ...current,
+          finalRiskScore: response.data.riskScore,
+          proctor: { ...(current.proctor || {}), suspicionScore: response.data.riskScore, riskScore: response.data.riskScore },
+        }));
+      }
+      if (response.data.disqualified) {
+        setLocked(true);
+        toast.error(`Disqualified: ${response.data.disqualificationReason}`);
+        navigate('/student', { replace: true });
+        return;
+      }
+      toast.error(`Violation detected: ${response.data.violation?.message || item.message}`);
     },
-    [session._id],
+    [locked, navigate, session._id],
   );
 
-  const { videoRef, signals } = useProctoring(reportViolation);
+  const monitoringEnabled = Boolean(session._id && session._id !== 'demo-session' && !locked);
+  const { videoRef, signals, requestScreenShare } = useProctoring(reportViolation, { enabled: monitoringEnabled });
   const question = exam.questions?.[active];
 
   useEffect(() => {
@@ -47,9 +82,15 @@ export default function ExamRoom() {
     socket.emit('session:join', session._id);
     socket.on('warning:manual', (payload) => toast(payload.message));
     socket.on('exam:submitted', () => navigate('/student'));
+    socket.on('exam:disqualified', (payload) => {
+      setLocked(true);
+      toast.error(`Disqualified: ${payload.disqualificationReason || 'Integrity policy violation'}`);
+      navigate('/student', { replace: true });
+    });
     return () => {
       socket.off('warning:manual');
       socket.off('exam:submitted');
+      socket.off('exam:disqualified');
     };
   }, [session._id, navigate]);
 
@@ -59,8 +100,27 @@ export default function ExamRoom() {
   }, []);
 
   useEffect(() => {
+    if (!monitoringEnabled) return undefined;
+    const sync = window.setInterval(() => {
+      api.patch(`/sessions/${session._id}/signals`, signals).catch(() => null);
+    }, 3000);
+    
+    const handleBeforeUnload = (e) => {
+      e.preventDefault();
+      e.returnValue = '';
+      return '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    return () => {
+      window.clearInterval(sync);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [monitoringEnabled, session._id, signals]);
+
+  useEffect(() => {
     const save = window.setTimeout(() => {
-      if (!question) return;
+      if (!question || locked) return;
       api.patch(`/sessions/${session._id}/answer`, {
         questionId: question._id,
         value: answers[question._id],
@@ -69,7 +129,7 @@ export default function ExamRoom() {
       }).catch(() => null);
     }, 900);
     return () => window.clearTimeout(save);
-  }, [answers, question, session._id, exam.questions?.length]);
+  }, [answers, question, session._id, exam.questions?.length, locked]);
 
   const time = useMemo(() => {
     const minutes = Math.floor(seconds / 60).toString().padStart(2, '0');
@@ -78,28 +138,35 @@ export default function ExamRoom() {
   }, [seconds]);
 
   async function submit(force = false) {
+    if (locked) return;
     await api.post(`/sessions/${session._id}/submit`, { force }).catch(() => null);
     toast.success(force ? 'Exam force-submitted by integrity policy' : 'Exam submitted');
     navigate('/student');
   }
 
   function requestFullscreen() {
-    document.documentElement.requestFullscreen?.();
+    document.documentElement.requestFullscreen?.().catch(() => null);
   }
 
   return (
-    <Page className="overflow-hidden">
-      <header className="sticky top-0 z-30 border-b border-white/10 bg-slate-950/70 px-4 py-3 backdrop-blur-2xl">
+    <ExamLockdownService 
+      signals={signals} 
+      locked={locked} 
+      requestScreenShare={requestScreenShare} 
+      monitoringEnabled={monitoringEnabled}
+    >
+      <Page className="overflow-hidden">
+        <header className="sticky top-0 z-30 border-b border-white/10 bg-slate-950/70 px-4 py-3 backdrop-blur-2xl">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-xs uppercase tracking-[0.22em] text-teal-200/80">Secure exam mode</p>
             <h1 className="text-lg font-semibold sm:text-xl">{exam.title}</h1>
           </div>
           <div className="flex items-center gap-2">
-            <StatusPill tone={signals.suspicionScore > 70 ? 'rose' : 'teal'}><Eye className="mr-1 inline h-3 w-3" /> {signals.suspicionScore}% risk</StatusPill>
+            <StatusPill tone={(session.finalRiskScore || signals.riskScore || signals.suspicionScore) >= 70 ? 'rose' : 'teal'}><Eye className="mr-1 inline h-3 w-3" /> {session.finalRiskScore || signals.riskScore || signals.suspicionScore}% risk</StatusPill>
             <StatusPill tone="sky"><Clock className="mr-1 inline h-3 w-3" /> {time}</StatusPill>
             <Button variant="ghost" onClick={requestFullscreen}><Maximize2 className="h-4 w-4" /> Fullscreen</Button>
-            <Button onClick={() => submit(false)}><Send className="h-4 w-4" /> Submit</Button>
+            <Button onClick={() => submit(false)} disabled={locked}><Send className="h-4 w-4" /> Submit</Button>
           </div>
         </div>
       </header>
@@ -167,7 +234,7 @@ export default function ExamRoom() {
                 <div key={violation._id} className="rounded-2xl border border-amber-200/20 bg-amber-200/10 p-3 text-sm">
                   <AlertTriangle className="mb-2 h-4 w-4 text-amber-100" />
                   <p className="font-semibold capitalize">{violation.type.replaceAll('_', ' ')}</p>
-                  <p className="text-xs text-slate-400">Severity {violation.severity}/10</p>
+                  <p className="text-xs text-slate-400">{new Date(violation.createdAt).toLocaleTimeString()} · +{violation.riskAdded || 0} risk</p>
                 </div>
               ))}
             </div>
@@ -175,6 +242,7 @@ export default function ExamRoom() {
         </aside>
       </div>
     </Page>
+    </ExamLockdownService>
   );
 }
 

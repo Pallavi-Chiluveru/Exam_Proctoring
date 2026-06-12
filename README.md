@@ -25,12 +25,7 @@ npm run dev
 
 Open `http://localhost:5173`.
 
-Demo accounts after seeding:
 
-- Admin: `admin@aegis.ai` / `password123`
-- Student: `student@aegis.ai` / `password123`
-
-The frontend also includes a demo fallback if the backend or MongoDB is not running.
 
 ## Features
 
@@ -41,3 +36,4 @@ The frontend also includes a demo fallback if the backend or MongoDB is not runn
 - Exam and student management screens
 - Monaco coding lab with simulated hidden test cases and execution results
 - Express MVC backend with JWT, role-based access, Helmet, rate limiting, Mongoose schemas, and Socket.IO events
+

@@ -4,6 +4,9 @@ import { createApp } from './app.js';
 import { connectDatabase } from './config/database.js';
 import { createSocketServer } from './sockets/index.js';
 
+import { seedAdminAccount } from './utils/adminSeed.js';
+import { migrateCandidateIds } from './utils/migrateCandidateIds.js';
+
 dotenv.config();
 
 const port = process.env.PORT || 5000;
@@ -13,12 +16,19 @@ const server = http.createServer(app);
 createSocketServer(server);
 
 connectDatabase()
-  .then(() => {
+  .then(async () => {
+    // Ensure the admin account exists
+    await seedAdminAccount();
+
+    // Migrate existing users to have a Candidate ID
+    await migrateCandidateIds();
+
     server.listen(port, () => {
-      console.log(`Aegis API running on http://localhost:${port}`);
+      console.log(`ProctorX API running on http://localhost:${port}`);
     });
   })
   .catch((error) => {
     console.error('Failed to start server', error);
     process.exit(1);
   });
+// Trigger nodemon

@@ -20,6 +20,7 @@ const proctorSignalSchema = new mongoose.Schema(
     headPose: { type: String, default: 'neutral' },
     audioLevel: { type: Number, default: 0 },
     suspicionScore: { type: Number, default: 0 },
+    riskScore: { type: Number, default: 0 },
   },
   { _id: false },
 );
@@ -28,16 +29,24 @@ const sessionSchema = new mongoose.Schema(
   {
     exam: { type: mongoose.Schema.Types.ObjectId, ref: 'Exam', required: true },
     student: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    status: { type: String, enum: ['waiting', 'active', 'submitted', 'terminated'], default: 'waiting' },
+    status: { type: String, enum: ['waiting', 'active', 'submitted', 'terminated', 'disqualified'], default: 'waiting' },
     startedAt: Date,
     submittedAt: Date,
     ip: String,
     fingerprint: String,
     browser: String,
-    score: { type: Number, default: 0 },
+    score: { type: Number, default: 0 }, // Backwards compatibility (percentage)
+    marksObtained: { type: Number, default: 0 },
+    totalMarks: { type: Number, default: 0 },
+    percentage: { type: Number, default: 0 },
+    result: { type: String, enum: ['Passed', 'Failed', 'Pending'], default: 'Pending' },
     progress: { type: Number, default: 0 },
     answers: [answerSchema],
     proctor: { type: proctorSignalSchema, default: () => ({}) },
+    finalRiskScore: { type: Number, default: 0 },
+    disqualificationReason: String,
+    violationReport: mongoose.Schema.Types.Mixed,
+    violationCounts: { type: Map, of: Number, default: () => new Map() },
     snapshots: [
       {
         type: { type: String, enum: ['webcam', 'screen'] },

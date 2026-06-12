@@ -2,6 +2,7 @@
 import { UAParser } from 'ua-parser-js';
 import { z } from 'zod';
 import { User } from '../models/User.js';
+import { generateCandidateId } from '../utils/generateCandidateId.js';
 import { signToken } from '../utils/token.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
@@ -9,13 +10,13 @@ const authSchema = z.object({
   name: z.string().min(2).optional(),
   email: z.string().email(),
   password: z.string().min(6),
-  role: z.enum(['student', 'admin']).optional(),
   fingerprint: z.string().optional(),
 });
 
 function serializeUser(user) {
   return {
     id: user._id,
+    candidateId: user.candidateId,
     name: user.name,
     email: user.email,
     role: user.role,
@@ -42,12 +43,15 @@ export const register = asyncHandler(async (req, res) => {
   const exists = await User.findOne({ email: data.email });
   if (exists) return res.status(409).json({ message: 'Email already registered' });
 
+  const candidateId = await generateCandidateId();
+
   const user = await User.create({
+    candidateId,
     name: data.name || data.email.split('@')[0],
     email: data.email,
     password: data.password,
-    role: data.role || 'student',
-    department: data.role === 'admin' ? 'Exam Operations' : 'Computer Science',
+    role: 'student',
+    department: 'Computer Science',
     devices: [deviceFromRequest(req, data.fingerprint)],
   });
 

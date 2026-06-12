@@ -7,6 +7,7 @@ import authRoutes from './routes/auth.routes.js';
 import examRoutes from './routes/exam.routes.js';
 import sessionRoutes from './routes/session.routes.js';
 import adminRoutes from './routes/admin.routes.js';
+import studentRoutes from './routes/student.routes.js';
 import codeRoutes from './routes/code.routes.js';
 import { errorHandler, notFound } from './middleware/error.middleware.js';
 
@@ -27,10 +28,11 @@ export function createApp() {
     }),
   );
 
-  app.get('/api/health', (_req, res) => res.json({ status: 'ok', service: 'aegis-proctor' }));
+  app.get('/api/health', (_req, res) => res.json({ status: 'ok', service: 'proctorx' }));
   app.use('/api/auth', authRoutes);
   app.use('/api/exams', examRoutes);
   app.use('/api/sessions', sessionRoutes);
+  app.use('/api/student', studentRoutes);
   app.use('/api/admin', adminRoutes);
   app.use('/api/code', codeRoutes);
   app.use(notFound);

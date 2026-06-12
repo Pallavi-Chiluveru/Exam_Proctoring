@@ -5,29 +5,33 @@ import { api } from '../services/api';
 const AuthContext = createContext(null);
 
 const fallbackUsers = {
-  admin: { id: 'demo-admin', name: 'Ava Sterling', email: 'admin@aegis.ai', role: 'admin', avatar: 'AS' },
-  student: { id: 'demo-student', name: 'Arjun Rao', email: 'student@aegis.ai', role: 'student', avatar: 'AR' },
+  admin: { id: 'demo-admin', candidateId: 'PXADMIN01', name: 'Ava Sterling', email: 'admin@proctorx.com', role: 'admin', avatar: 'AS' },
+  student: { id: 'demo-student', candidateId: '26PX999', name: 'Arjun Rao', email: 'student@proctorx.com', role: 'student', avatar: 'AR' },
 };
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('aegis_user') || 'null'));
+  const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('proctorx_user') || 'null'));
   const [loading, setLoading] = useState(false);
 
   async function login(payload) {
     setLoading(true);
     try {
       const { data } = await api.post('/auth/login', payload);
-      localStorage.setItem('aegis_token', data.token);
-      localStorage.setItem('aegis_user', JSON.stringify(data.user));
+      localStorage.setItem('proctorx_token', data.token);
+      localStorage.setItem('proctorx_user', JSON.stringify(data.user));
       setUser(data.user);
       toast.success(`Welcome back, ${data.user.name}`);
-    } catch {
-      const role = payload.email?.includes('admin') ? 'admin' : 'student';
-      const demoUser = fallbackUsers[role];
-      localStorage.setItem('aegis_token', 'demo-token');
-      localStorage.setItem('aegis_user', JSON.stringify(demoUser));
-      setUser(demoUser);
-      toast('Demo mode active. Start MongoDB for persistent data.');
+    } catch (error) {
+      if (error.response && error.response.status >= 400 && error.response.status < 500) {
+        toast.error(error.response.data?.message || 'Login failed. Please check your credentials.');
+      } else {
+        const role = payload.email?.includes('admin') ? 'admin' : 'student';
+        const demoUser = fallbackUsers[role];
+        localStorage.setItem('proctorx_token', 'demo-token');
+        localStorage.setItem('proctorx_user', JSON.stringify(demoUser));
+        setUser(demoUser);
+        toast('Demo mode active. Start MongoDB for persistent data.');
+      }
     } finally {
       setLoading(false);
     }
@@ -37,24 +41,34 @@ export function AuthProvider({ children }) {
     setLoading(true);
     try {
       const { data } = await api.post('/auth/register', payload);
-      localStorage.setItem('aegis_token', data.token);
-      localStorage.setItem('aegis_user', JSON.stringify(data.user));
+      localStorage.setItem('proctorx_token', data.token);
+      localStorage.setItem('proctorx_user', JSON.stringify(data.user));
       setUser(data.user);
       toast.success('Account created');
-    } catch {
-      toast.error('Registration needs the backend running with MongoDB.');
+    } catch (error) {
+      if (error.response && error.response.status >= 400 && error.response.status < 500) {
+        toast.error(error.response.data?.message || 'Registration failed.');
+      } else {
+        toast.error('Registration needs the backend running with MongoDB.');
+      }
     } finally {
       setLoading(false);
     }
   }
 
   function logout() {
-    localStorage.removeItem('aegis_token');
-    localStorage.removeItem('aegis_user');
+    localStorage.removeItem('proctorx_token');
+    localStorage.removeItem('proctorx_user');
     setUser(null);
   }
 
-  const value = useMemo(() => ({ user, loading, login, register, logout }), [user, loading]);
+  function updateUser(userData) {
+    const updated = { ...user, ...userData };
+    localStorage.setItem('proctorx_user', JSON.stringify(updated));
+    setUser(updated);
+  }
+
+  const value = useMemo(() => ({ user, loading, login, register, logout, updateUser }), [user, loading]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

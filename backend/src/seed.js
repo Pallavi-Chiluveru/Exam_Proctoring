@@ -13,43 +13,48 @@ async function seed() {
   await connectDatabase();
   await Promise.all([User.deleteMany({}), Exam.deleteMany({}), ProctorSession.deleteMany({}), Violation.deleteMany({})]);
 
-  const [admin, student, studentTwo, studentThree] = await User.create([
-    {
-      name: 'Ava Sterling',
-      email: 'admin@aegis.ai',
-      password: 'password123',
-      role: 'admin',
-      department: 'Exam Operations',
-      avatar: 'AS',
-    },
-    {
-      name: 'Arjun Rao',
-      email: 'student@aegis.ai',
-      password: 'password123',
-      role: 'student',
-      department: 'Computer Science',
-      avatar: 'AR',
-      riskScore: 18,
-    },
-    {
-      name: 'Maya Chen',
-      email: 'maya@aegis.ai',
-      password: 'password123',
-      role: 'student',
-      department: 'Data Science',
-      avatar: 'MC',
-      riskScore: 42,
-    },
-    {
-      name: 'Ishan Mehta',
-      email: 'ishan@aegis.ai',
-      password: 'password123',
-      role: 'student',
-      department: 'Software Engineering',
-      avatar: 'IM',
-      riskScore: 27,
-    },
-  ]);
+  const admin = await User.create({
+    candidateId: 'PXADMIN01',
+    name: 'Ava Sterling',
+    email: 'admin@proctorx.com',
+    password: 'password123',
+    role: 'admin',
+    department: 'Exam Operations',
+    avatar: 'AS',
+  });
+
+  const student1 = await User.create({
+    candidateId: '26PX001',
+    name: 'Arjun Rao',
+    email: 'student@proctorx.com',
+    password: 'password123',
+    role: 'student',
+    department: 'Computer Science',
+    avatar: 'AR',
+    riskScore: 18,
+  });
+
+  const student2 = await User.create({
+    candidateId: '26PX002',
+    name: 'Maya Chen',
+    email: 'maya@proctorx.com',
+    password: 'password123',
+    role: 'student',
+    department: 'Data Science',
+    avatar: 'MC',
+    riskScore: 42,
+  });
+
+  const student3 = await User.create({
+    candidateId: '26PX003',
+    name: 'Ishan Mehta',
+    email: 'ishan@proctorx.com',
+    password: 'password123',
+    role: 'student',
+    department: 'Software Engineering',
+    avatar: 'IM',
+    riskScore: 27,
+  });
 
   const exam = await Exam.create({
     title: 'Advanced Algorithms and Systems Design',
@@ -60,7 +65,7 @@ async function seed() {
     endsAt: new Date(now + 100 * 60 * 1000),
     status: 'live',
     createdBy: admin._id,
-    assignedStudents: [student._id, studentTwo._id, studentThree._id],
+    assignedStudents: [student1._id, student2._id, student3._id],
     questions: [
       {
         type: 'mcq',
@@ -95,7 +100,7 @@ async function seed() {
   const sessions = await ProctorSession.create([
     {
       exam: exam._id,
-      student: student._id,
+      student: student1._id,
       status: 'active',
       startedAt: new Date(now - 18 * 60 * 1000),
       progress: 58,
@@ -104,7 +109,7 @@ async function seed() {
     },
     {
       exam: exam._id,
-      student: studentTwo._id,
+      student: student2._id,
       status: 'active',
       startedAt: new Date(now - 26 * 60 * 1000),
       progress: 72,
@@ -113,7 +118,7 @@ async function seed() {
     },
     {
       exam: exam._id,
-      student: studentThree._id,
+      student: student3._id,
       status: 'submitted',
       startedAt: new Date(now - 160 * 60 * 1000),
       submittedAt: new Date(now - 38 * 60 * 1000),
@@ -127,7 +132,7 @@ async function seed() {
     {
       session: sessions[1]._id,
       exam: exam._id,
-      student: studentTwo._id,
+      student: student2._id,
       type: 'eye_movement',
       message: 'Sustained off-screen gaze pattern detected.',
       severity: 5,
@@ -137,7 +142,7 @@ async function seed() {
     {
       session: sessions[1]._id,
       exam: exam._id,
-      student: studentTwo._id,
+      student: student2._id,
       type: 'audio_anomaly',
       message: 'Audio anomaly exceeded room baseline.',
       severity: 6,
@@ -147,7 +152,7 @@ async function seed() {
     {
       session: sessions[0]._id,
       exam: exam._id,
-      student: student._id,
+      student: student1._id,
       type: 'tab_switch',
       message: 'Candidate moved away from the secure exam tab.',
       severity: 7,
@@ -156,9 +161,9 @@ async function seed() {
     },
   ]);
 
-  console.log('Seed complete');
-  console.log('Admin: admin@aegis.ai / password123');
-  console.log('Student: student@aegis.ai / password123');
+  console.log('--- Demo Accounts ---');
+  console.log('Admin: admin@proctorx.com / password123');
+  console.log('Student: student@proctorx.com / password123');
   process.exit(0);
 }
 
