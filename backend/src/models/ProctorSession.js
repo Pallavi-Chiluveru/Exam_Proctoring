@@ -6,6 +6,18 @@ const answerSchema = new mongoose.Schema(
     value: mongoose.Schema.Types.Mixed,
     language: String,
     updatedAt: { type: Date, default: Date.now },
+    evaluation: {
+      isCorrect: Boolean,
+      marks: { type: Number, default: 0 },
+      // For coding
+      passedCases: Number,
+      totalCases: Number,
+      runtimeMs: Number,
+      executionError: String,
+      // For descriptive
+      matchedKeywords: [String],
+      missingKeywords: [String],
+    }
   },
   { _id: false },
 );

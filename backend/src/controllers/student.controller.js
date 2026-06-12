@@ -202,7 +202,9 @@ export const getResultDetails = asyncHandler(async (req, res) => {
       percentage: percentage,
       result: session.result || (percentage >= 50 ? 'Passed' : 'Failed')
     },
-    topics: session.exam?.category ? [{ name: session.exam.category, score: percentage }] : []
+    topics: session.exam?.category ? [{ name: session.exam.category, score: percentage }] : [],
+    questions: session.exam?.questions || [],
+    answers: session.answers || []
   });
 });
 

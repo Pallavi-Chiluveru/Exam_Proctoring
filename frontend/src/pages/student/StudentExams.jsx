@@ -21,7 +21,7 @@ export default function StudentDashboard() {
                   <div><p className="text-sm text-slate-400">{exam.category}</p><h3 className="mt-2 text-xl font-semibold">{exam.title}</h3></div>
                   <StatusPill tone={exam.status === 'live' ? 'teal' : 'sky'}>{exam.status || 'scheduled'}</StatusPill>
                 </div>
-                <div className="mt-5 flex items-center gap-2 text-sm text-slate-400"><Clock className="h-4 w-4" /> {exam.durationMinutes} minutes · {exam.questions?.length || 0} questions</div>
+                <div className="mt-5 flex items-center gap-2 text-sm text-slate-400"><Clock className="h-4 w-4" /> {exam.durationMinutes} minutes · {exam.totalQuestions || exam.questions?.length || 0} questions</div>
                 <Link to={`/verification/${exam._id}`}><Button className="mt-5 w-full"><Play className="h-4 w-4" /> Start secure exam</Button></Link>
               </div>
             </Glass>

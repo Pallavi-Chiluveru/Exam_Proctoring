@@ -5,6 +5,7 @@ import { Violation } from '../models/Violation.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { computeRiskEvent, createViolationNarrative, getViolationLabel } from '../services/proctor.service.js';
 import { getIo } from '../sockets/index.js';
+import { evaluateCode } from '../services/codeRunner.service.js';
 
 export const startSession = asyncHandler(async (req, res) => {
   const exam = await Exam.findById(req.params.examId);
@@ -164,28 +165,75 @@ export const submitSession = asyncHandler(async (req, res) => {
       const answerRecord = session.answers.find(a => String(a.questionId) === String(question._id));
       if (!answerRecord || answerRecord.value == null) continue;
 
+      let marksForQuestion = 0;
       let isCorrect = false;
+      const evaluation = {
+        isCorrect: false,
+        marks: 0,
+      };
 
       if (question.type === 'mcq') {
          const correctAnswers = question.correctAnswers && question.correctAnswers.length > 0 ? question.correctAnswers : (question.answer ? [question.answer] : []);
          if (correctAnswers.includes(answerRecord.value)) {
            isCorrect = true;
+           marksForQuestion = points;
          }
       } else if (question.type === 'msq') {
          const correctAnswers = question.correctAnswers || [];
          const studentAnswers = Array.isArray(answerRecord.value) ? answerRecord.value : [];
          if (correctAnswers.length === studentAnswers.length && correctAnswers.every(ans => studentAnswers.includes(ans))) {
            isCorrect = true;
+           marksForQuestion = points;
          }
       } else if (question.type === 'descriptive') {
-         if (question.expectedAnswer && typeof answerRecord.value === 'string' && answerRecord.value.trim().toLowerCase() === question.expectedAnswer.trim().toLowerCase()) {
-            isCorrect = true;
+         const keywords = question.keywords || [];
+         const answerText = typeof answerRecord.value === 'string' ? answerRecord.value.toLowerCase() : '';
+         const matchedKeywords = [];
+         const missingKeywords = [];
+
+         if (keywords.length > 0) {
+           for (const kw of keywords) {
+             if (answerText.includes(kw.trim().toLowerCase())) {
+               matchedKeywords.push(kw);
+             } else {
+               missingKeywords.push(kw);
+             }
+           }
+           const matchRatio = matchedKeywords.length / keywords.length;
+           marksForQuestion = Math.round(points * matchRatio);
+           isCorrect = matchRatio === 1;
+           evaluation.matchedKeywords = matchedKeywords;
+           evaluation.missingKeywords = missingKeywords;
+         } else {
+           // Fallback to exact match if no keywords
+           if (question.expectedAnswer && answerText === question.expectedAnswer.trim().toLowerCase()) {
+              isCorrect = true;
+              marksForQuestion = points;
+           }
+         }
+      } else if (question.type === 'coding') {
+         const testCases = question.testCases || [];
+         const code = answerRecord.value || '';
+         const lang = answerRecord.language || question.language || 'javascript';
+         
+         const codeEvaluation = await evaluateCode(code, lang, testCases);
+         
+         evaluation.passedCases = codeEvaluation.passed;
+         evaluation.totalCases = codeEvaluation.total;
+         evaluation.runtimeMs = codeEvaluation.totalRuntimeMs;
+         
+         if (codeEvaluation.total > 0) {
+            const passRatio = codeEvaluation.passed / codeEvaluation.total;
+            marksForQuestion = Math.round(points * passRatio);
+            isCorrect = passRatio === 1;
          }
       }
       
-      if (isCorrect) {
-        marksObtained += points;
-      }
+      evaluation.isCorrect = isCorrect;
+      evaluation.marks = marksForQuestion;
+      answerRecord.evaluation = evaluation;
+      
+      marksObtained += marksForQuestion;
     }
   }
 

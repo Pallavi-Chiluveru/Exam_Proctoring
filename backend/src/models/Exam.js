@@ -76,4 +76,7 @@ const examSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
+examSchema.index({ startsAt: 1 });
+examSchema.index({ status: 1 });
+
 export const Exam = mongoose.model('Exam', examSchema);

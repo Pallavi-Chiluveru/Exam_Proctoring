@@ -29,6 +29,8 @@ export default function ExamRoom() {
   const [seconds, setSeconds] = useState(120 * 60);
   const [violations, setViolations] = useState([]);
   const [locked, setLocked] = useState(false);
+  const [codeRunResults, setCodeRunResults] = useState({});
+  const [runningCode, setRunningCode] = useState(false);
 
   const reportViolation = useCallback(
     async (type, metadata) => {
@@ -144,6 +146,24 @@ export default function ExamRoom() {
     navigate('/student');
   }
 
+  async function runCode() {
+    if (!question || locked) return;
+    setRunningCode(true);
+    try {
+      const response = await api.post('/code/run', {
+        language: question.language || 'javascript',
+        code: answers[question._id] || question.starterCode || '',
+        testCases: question.testCases || []
+      });
+      setCodeRunResults({ ...codeRunResults, [question._id]: response.data });
+      toast.success(response.data.status === 'accepted' ? 'All tests passed!' : 'Some tests failed.');
+    } catch (err) {
+      toast.error('Failed to run code');
+    } finally {
+      setRunningCode(false);
+    }
+  }
+
   function requestFullscreen() {
     document.documentElement.requestFullscreen?.().catch(() => null);
   }
@@ -201,9 +221,78 @@ export default function ExamRoom() {
                   ))}
                 </div>
               ) : null}
+              {question?.type === 'msq' ? (
+                <div className="grid gap-3">
+                  {question.options.map((option) => {
+                    const selected = Array.isArray(answers[question._id]) ? answers[question._id] : [];
+                    const isChecked = selected.includes(option);
+                    return (
+                      <label key={option} className="flex cursor-pointer items-center gap-3 rounded-2xl border border-white/10 bg-white/6 p-4 transition hover:bg-white/10">
+                        <input 
+                          type="checkbox" 
+                          checked={isChecked} 
+                          onChange={(e) => {
+                            const newSelected = e.target.checked 
+                              ? [...selected, option] 
+                              : selected.filter(v => v !== option);
+                            setAnswers({ ...answers, [question._id]: newSelected });
+                          }} 
+                          className="w-4 h-4 accent-teal-500 rounded border-white/20 bg-slate-900"
+                        />
+                        <span>{option}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              ) : null}
               {question?.type === 'coding' ? (
-                <div className="overflow-hidden rounded-2xl border border-white/10">
-                  <Editor height="560px" theme="vs-dark" language={question.language || 'javascript'} value={answers[question._id] || question.starterCode} onChange={(value) => setAnswers({ ...answers, [question._id]: value })} options={{ minimap: { enabled: false }, fontSize: 14, smoothScrolling: true }} />
+                <div className="space-y-4">
+                  <div className="overflow-hidden rounded-2xl border border-white/10">
+                    <Editor height="400px" theme="vs-dark" language={question.language || 'javascript'} value={answers[question._id] || question.starterCode} onChange={(value) => setAnswers({ ...answers, [question._id]: value })} options={{ minimap: { enabled: false }, fontSize: 14, smoothScrolling: true }} />
+                  </div>
+                  <div className="flex justify-end">
+                    <Button onClick={runCode} disabled={runningCode || locked} variant="secondary">
+                      {runningCode ? 'Running...' : 'Run Code'}
+                    </Button>
+                  </div>
+                  {codeRunResults[question._id] && (
+                    <div className="rounded-2xl border border-white/10 bg-black/40 p-4">
+                      <h3 className="text-sm font-semibold mb-3 flex justify-between items-center">
+                        <span>Execution Results</span>
+                        <StatusPill tone={codeRunResults[question._id].status === 'accepted' ? 'teal' : 'rose'}>
+                          {codeRunResults[question._id].status === 'accepted' ? 'All Passed' : 'Partial/Failed'} ({codeRunResults[question._id].runtimeMs}ms)
+                        </StatusPill>
+                      </h3>
+                      <div className="space-y-3">
+                        {codeRunResults[question._id].tests.map((test, i) => (
+                          <div key={i} className={`p-3 rounded-lg border ${test.passed ? 'border-emerald-500/20 bg-emerald-500/10' : 'border-rose-500/20 bg-rose-500/10'}`}>
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="font-medium text-sm">{test.name}</span>
+                              <span className={`text-xs font-bold ${test.passed ? 'text-emerald-400' : 'text-rose-400'}`}>{test.passed ? 'Passed' : 'Failed'}</span>
+                            </div>
+                            {!test.hidden && !test.passed && (
+                               <div className="grid grid-cols-2 gap-2 text-xs font-mono mt-2">
+                                 <div>
+                                   <div className="text-slate-500 mb-1">Expected Output:</div>
+                                   <div className="bg-black/50 p-2 rounded text-slate-300">{test.expectedOutput || ' '}</div>
+                                 </div>
+                                 <div>
+                                   <div className="text-slate-500 mb-1">Your Output:</div>
+                                   <div className="bg-black/50 p-2 rounded text-slate-300">{test.actualOutput || test.errorMsg || ' '}</div>
+                                 </div>
+                               </div>
+                            )}
+                            {test.errorOutput && (
+                               <div className="mt-2 text-xs font-mono">
+                                 <div className="text-slate-500 mb-1">Error:</div>
+                                 <div className="bg-black/50 p-2 rounded text-rose-400">{test.errorOutput}</div>
+                               </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : null}
               {question?.type === 'descriptive' ? (

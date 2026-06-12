@@ -97,7 +97,7 @@ export default function AdminDashboard() {
         <MetricCard icon={Activity} label="Active students" value={metrics.activeStudents} trend={metrics.activeStudents > 0 ? 'Assigned' : '-'} />
         <MetricCard icon={AlertTriangle} label="Suspicious activities" value={metrics.suspiciousActivities} trend={metrics.suspiciousActivities > 0 ? 'Logged' : '-'} />
         <MetricCard icon={BrainCircuit} label="Live sessions" value={metrics.liveSessions} trend={metrics.liveSessions > 0 ? 'Realtime' : '-'} />
-        <MetricCard icon={ShieldAlert} label="Average integrity" value={`${metrics.averageIntegrityScore}%`} trend={metrics.averageIntegrityScore !== null ? 'Avg' : '-'} />
+        <MetricCard icon={ShieldAlert} label="Average integrity" value={metrics.activeStudents > 0 ? `${metrics.averageIntegrityScore}%` : 'N/A'} trend={metrics.activeStudents > 0 ? 'Avg' : '-'} />
       </div>
 
       <div className="grid gap-6 xl:grid-cols-3">

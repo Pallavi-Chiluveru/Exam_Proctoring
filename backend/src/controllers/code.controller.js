@@ -1,19 +1,30 @@
+import { evaluateCode } from '../services/codeRunner.service.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
 export const runCode = asyncHandler(async (req, res) => {
-  const { language = 'javascript', code = '' } = req.body;
-  const passed = Math.max(1, Math.min(7, Math.floor(code.length / 70) + 1));
-  const total = 8;
+  const { language = 'javascript', code = '', testCases = [] } = req.body;
+  
+  if (!testCases || testCases.length === 0) {
+     return res.status(400).json({ message: 'No test cases provided for evaluation.' });
+  }
+
+  const evaluation = await evaluateCode(code, language, testCases);
+
   res.json({
     language,
-    status: passed >= total - 1 ? 'accepted' : 'partial',
-    runtimeMs: 38 + code.length,
-    memoryMb: 42,
-    output: language === 'javascript' ? 'Executed in secure sandbox simulation.' : 'Queued on remote runner simulation.',
-    tests: Array.from({ length: total }, (_, index) => ({
-      name: index > 4 ? `Hidden ${index - 4}` : `Sample ${index + 1}`,
-      hidden: index > 4,
-      passed: index < passed,
+    status: evaluation.overallStatus,
+    runtimeMs: evaluation.totalRuntimeMs,
+    memoryMb: 42, // Mocked for now
+    output: evaluation.overallStatus === 'accepted' ? 'All test cases passed.' : 'Some test cases failed.',
+    tests: evaluation.results.map((r, index) => ({
+      name: r.hidden ? `Hidden ${index}` : `Sample ${index + 1}`,
+      hidden: r.hidden,
+      passed: r.passed,
+      input: r.input,
+      expectedOutput: r.expectedOutput,
+      actualOutput: r.actualOutput,
+      errorOutput: r.errorOutput,
+      errorMsg: r.errorMsg
     })),
   });
 });

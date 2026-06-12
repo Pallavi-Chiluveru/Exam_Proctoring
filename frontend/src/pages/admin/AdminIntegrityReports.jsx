@@ -96,7 +96,9 @@ export default function AdminIntegrityReports() {
             <ShieldAlert className="h-5 w-5 text-teal-400" />
             <h3 className="font-medium text-sm">Avg Integrity Score</h3>
           </div>
-          <p className="text-3xl font-semibold text-white">{loading ? '-' : `${summary.averageIntegrity}%`}</p>
+          <p className="text-3xl font-semibold text-white">
+            {loading ? '-' : summary.totalAttempts > 0 ? `${summary.averageIntegrity}%` : 'N/A'}
+          </p>
         </Glass>
         <Glass className="p-6">
           <div className="flex items-center gap-3 text-slate-400 mb-2">

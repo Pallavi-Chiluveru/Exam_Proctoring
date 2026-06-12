@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { CalendarPlus, MoreVertical, Edit2, Eye, Copy, Trash2, BarChart2 } from 'lucide-react';
-import { Button, Glass, SectionTitle, StatusPill } from '../../components/ui';
+import { Button, Glass, SectionTitle, StatusPill, Skeleton } from '../../components/ui';
 import { api, demo } from '../../services/api';
 import { useApiResource } from '../../hooks/useApiResource';
 import { DeleteAssessmentModal, PreviewAssessmentModal } from './ExamModals';
@@ -40,6 +40,8 @@ function ActionMenu({ exam, onDelete, onDuplicate }) {
   }, [isOpen]);
 
   useEffect(() => {
+    if (!isOpen) return;
+
     function handleClickOutside(event) {
       if (
         menuRef.current && !menuRef.current.contains(event.target) &&
@@ -51,7 +53,7 @@ function ActionMenu({ exam, onDelete, onDuplicate }) {
     
     // Close dropdown on scroll/resize so it doesn't float disconnected
     const handleScrollOrResize = () => {
-      if (isOpen) setIsOpen(false);
+      setIsOpen(false);
     };
 
     document.addEventListener('mousedown', handleClickOutside);
@@ -170,7 +172,7 @@ function ActionMenu({ exam, onDelete, onDuplicate }) {
 }
 
 export default function ExamManager() {
-  const examsResource = useApiResource(async () => (await api.get('/exams')).data.exams, demo.exams, []);
+  const examsResource = useApiResource(async () => (await api.get('/exams')).data.exams, [], [], 'cache:admin:exams');
 
   const deleteExam = async (id) => {
     try {
@@ -223,7 +225,18 @@ export default function ExamManager() {
               </tr>
             </thead>
             <tbody>
-              {(examsResource.data || []).map((exam) => (
+              {examsResource.loading && (!examsResource.data || examsResource.data.length === 0) ? (
+                [1, 2, 3].map(i => (
+                  <tr key={i} className="border-b border-white/6">
+                    <td className="p-4"><Skeleton className="h-10 w-48" /></td>
+                    <td><Skeleton className="h-5 w-24" /></td>
+                    <td><Skeleton className="h-6 w-20 rounded-full" /></td>
+                    <td><Skeleton className="h-5 w-16" /></td>
+                    <td><Skeleton className="h-5 w-12" /></td>
+                    <td className="pr-4 text-right"><Skeleton className="h-8 w-8 rounded-full ml-auto" /></td>
+                  </tr>
+                ))
+              ) : (examsResource.data || []).map((exam) => (
                 <tr key={exam._id} className="border-b border-white/6 hover:bg-white/5 transition-colors">
                   <td className="p-4">
                     <p className="font-semibold text-slate-200">{exam.title}</p>
@@ -242,7 +255,7 @@ export default function ExamManager() {
                   </td>
                 </tr>
               ))}
-              {(!examsResource.data || examsResource.data.length === 0) && (
+              {!examsResource.loading && (!examsResource.data || examsResource.data.length === 0) && (
                 <tr>
                   <td colSpan={6} className="p-8 text-center text-slate-500">
                     No assessments found. Create one to get started.

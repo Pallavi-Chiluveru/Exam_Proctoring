@@ -120,7 +120,7 @@ export default function AssessmentBuilder() {
 
   const addQuestion = (type) => {
     const newQ = JSON.parse(JSON.stringify(DEFAULT_QUESTION_TEMPLATES[type]));
-    newQ.title = `New ${type.toUpperCase()} Question`;
+    newQ.title = `Q${questions.length + 1}`;
     setQuestions([...questions, newQ]);
     setSelectedQIdx(questions.length);
   };
@@ -159,7 +159,7 @@ export default function AssessmentBuilder() {
 
   const duplicateQuestion = (idx) => {
     const clone = JSON.parse(JSON.stringify(questions[idx]));
-    clone.title = `${clone.title} (Copy)`;
+    clone.title = `Q${questions.length + 1}`;
     setQuestions([...questions, clone]);
     setSelectedQIdx(questions.length);
   };

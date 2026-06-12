@@ -41,9 +41,15 @@ export const listExams = asyncHandler(async (req, res) => {
   const filter = req.user.role === 'admin' 
     ? {} 
     : { status: { $ne: 'draft' } };
-  const exams = await Exam.find(filter).sort({ startsAt: 1 }).lean();
-  const sessions = await ProctorSession.find({ student: req.user._id }).lean();
-  const sessionByExam = new Map(sessions.map((session) => [String(session.exam), session]));
+  
+  // Select out the questions array which can be huge. We only need summary data.
+  const exams = await Exam.find(filter).select('-questions').sort({ startsAt: 1 }).lean();
+  
+  let sessionByExam = new Map();
+  if (req.user.role === 'student') {
+    const sessions = await ProctorSession.find({ student: req.user._id }).lean();
+    sessionByExam = new Map(sessions.map((session) => [String(session.exam), session]));
+  }
 
   res.json({
     exams: exams.map((exam) => ({
