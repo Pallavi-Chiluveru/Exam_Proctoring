@@ -159,7 +159,7 @@ export const submitSession = asyncHandler(async (req, res) => {
 
   if (session.exam && session.exam.questions) {
     for (const question of session.exam.questions) {
-      const points = question.points || 10;
+      const points = question.points !== undefined ? Number(question.points) : 10;
       totalMarks += points;
       
       const answerRecord = session.answers.find(a => String(a.questionId) === String(question._id));

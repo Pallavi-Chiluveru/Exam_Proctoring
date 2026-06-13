@@ -54,17 +54,16 @@ export default function ScreenShareStep({ onNext }) {
   };
 
   const handleNext = () => {
-    // Keep stream active for the exam if needed, or stop it and let exam re-request.
-    // For this wizard, we'll stop it to clean up, ExamRoom re-requests if it has its own logic.
     if (stream) {
-      stream.getTracks().forEach(track => track.stop());
+      window.__proctorScreenStream = stream;
     }
     onNext({ screenVerified: true });
   };
 
   useEffect(() => {
     return () => {
-      if (stream) {
+      // Only stop the stream if it hasn't been handed off to the global variable
+      if (stream && window.__proctorScreenStream !== stream) {
         stream.getTracks().forEach(track => track.stop());
       }
     };

@@ -379,7 +379,7 @@ export const getResultDetail = asyncHandler(async (req, res) => {
 
   const session = await ProctorSession.findById(id)
     .populate('student', 'name email candidateId avatar')
-    .populate('exam', 'title durationMinutes passingMarks totalMarks')
+    .populate('exam', 'title durationMinutes passingMarks totalMarks questions')
     .lean();
 
   if (!session) {

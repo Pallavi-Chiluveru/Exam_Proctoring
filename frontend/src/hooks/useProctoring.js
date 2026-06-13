@@ -93,10 +93,19 @@ export function useProctoring(onViolation, options = {}) {
   const requestScreenShare = useCallback(async () => {
     isRequestingScreenRef.current = true;
     try {
-      const mediaStream = await navigator.mediaDevices.getDisplayMedia({
-        video: { displaySurface: 'monitor' },
-        audio: false,
-      });
+      let mediaStream = window.__proctorScreenStream;
+      const isReusingStream = mediaStream && mediaStream.active;
+
+      if (!isReusingStream) {
+        mediaStream = await navigator.mediaDevices.getDisplayMedia({
+          video: { displaySurface: 'monitor' },
+          audio: false,
+        });
+      }
+      
+      // Clear the global reference after claiming it
+      window.__proctorScreenStream = null;
+
       const track = mediaStream.getVideoTracks()[0];
       const settings = track?.getSettings?.() || {};
       if (settings.displaySurface && settings.displaySurface !== 'monitor') {
@@ -133,30 +142,87 @@ export function useProctoring(onViolation, options = {}) {
     let faceInterval;
     let phoneInterval;
     let audioInterval;
+    let healthInterval;
 
-    async function startCameraAndMic() {
+    async function startCameraAndMic(isRecovery = false) {
       try {
         const media = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         if (cancelled) {
           media.getTracks().forEach((track) => track.stop());
-          return;
+          return false;
         }
+        
+        if (webcamStreamRef.current) {
+          webcamStreamRef.current.getTracks().forEach(t => t.stop());
+        }
+        
         webcamStreamRef.current = media;
         if (videoRef.current) videoRef.current.srcObject = media;
         setSignals((current) => ({ ...current, camera: 'active', microphone: 'active' }));
 
-        const audioContext = new AudioContext();
-        const source = audioContext.createMediaStreamSource(media);
-        const analyzer = audioContext.createAnalyser();
-        analyzer.fftSize = 2048;
-        source.connect(analyzer);
-        audioContextRef.current = audioContext;
-        analyzerRef.current = analyzer;
+        const track = media.getVideoTracks()[0];
+        if (track) {
+          track.onended = () => {
+            setSignals((current) => ({ ...current, camera: 'lost' }));
+          };
+        }
+
+        if (!isRecovery) {
+          const audioContext = new AudioContext();
+          const source = audioContext.createMediaStreamSource(media);
+          const analyzer = audioContext.createAnalyser();
+          analyzer.fftSize = 2048;
+          source.connect(analyzer);
+          audioContextRef.current = audioContext;
+          analyzerRef.current = analyzer;
+        }
+        return true;
       } catch {
         setSignals((current) => ({ ...current, camera: 'blocked', microphone: 'blocked' }));
-        report('no_face', { confidence: 1, absentSeconds: 3, reason: 'camera_or_microphone_blocked', webcamEvidence: false });
-        toast.error('Camera and microphone permissions are required.');
+        if (!isRecovery) {
+           report('no_face', { confidence: 1, absentSeconds: 3, reason: 'camera_or_microphone_blocked', webcamEvidence: false });
+           toast.error('Camera and microphone permissions are required.');
+        }
+        return false;
       }
+    }
+
+    function startHardwareHealthMonitoring() {
+      let cameraLostSince = null;
+      let isRecovering = false;
+
+      healthInterval = window.setInterval(async () => {
+        const stream = webcamStreamRef.current;
+        const track = stream?.getVideoTracks()[0];
+        
+        const isHealthy = stream && stream.active && track && track.readyState === 'live' && track.enabled;
+
+        if (!isHealthy) {
+          if (!cameraLostSince) {
+            cameraLostSince = Date.now();
+          }
+
+          const offlineSeconds = (Date.now() - cameraLostSince) / 1000;
+
+          if (offlineSeconds > 5 && !isRecovering) {
+             setSignals((current) => ({ ...current, camera: 'lost' }));
+          }
+
+          if (!isRecovering) {
+            isRecovering = true;
+            try {
+              const recovered = await startCameraAndMic(true);
+              if (recovered) {
+                cameraLostSince = null;
+              }
+            } finally {
+              isRecovering = false;
+            }
+          }
+        } else {
+          cameraLostSince = null;
+        }
+      }, 2000);
     }
 
     async function startFaceMonitoring() {
@@ -171,7 +237,6 @@ export function useProctoring(onViolation, options = {}) {
         setSignals((current) => ({
           ...current,
           faceCount: count,
-          camera: count === 0 ? 'lost' : 'active',
         }));
 
         if (count === 0) {
@@ -285,8 +350,11 @@ export function useProctoring(onViolation, options = {}) {
 
     if (!enabled) return undefined;
 
-    startCameraAndMic().then(() => {
+    startCameraAndMic(false).then((success) => {
       if (cancelled) return;
+      if (success) {
+        startHardwareHealthMonitoring();
+      }
       startFaceMonitoring().catch(() => toast.error('Face monitoring model failed to load.'));
       // startPhoneMonitoring().catch(() => toast.error('Phone detection model failed to load.'));
       startAudioMonitoring();
@@ -298,6 +366,7 @@ export function useProctoring(onViolation, options = {}) {
       window.clearInterval(faceInterval);
       window.clearInterval(phoneInterval);
       window.clearInterval(audioInterval);
+      window.clearInterval(healthInterval);
       webcamStreamRef.current?.getTracks().forEach((track) => track.stop());
       screenStreamRef.current?.getTracks().forEach((track) => track.stop());
       if (audioContextRef.current && audioContextRef.current.state !== 'closed') {

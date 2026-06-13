@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Download, FileText, StatusPill } from 'lucide-react';
+import { ArrowLeft, Download, FileText } from 'lucide-react';
 import { Button, Glass, SectionTitle } from '../../components/ui';
 import { api } from '../../services/api';
 import { useApiResource } from '../../hooks/useApiResource';
@@ -14,6 +14,40 @@ export default function ResultDetail() {
 
   if (loading) return <div className="animate-pulse text-slate-400">Loading report details...</div>;
   if (!data) return <div className="text-rose-400">Result not found.</div>;
+
+  // Recalculate analysis based on actual evaluations
+  let calcTotal = 0;
+  let calcCorrect = 0;
+  let calcPartial = 0;
+  let calcWrong = 0;
+  let calcSkipped = 0;
+
+  if (data?.questions) {
+    calcTotal = data.questions.length;
+    data.questions.forEach(q => {
+      const answer = data.answers?.find(a => String(a.questionId) === String(q._id));
+      const maxMarks = Number(q.points !== undefined ? q.points : 10);
+      
+      const isSkipped = !answer || 
+                        answer.value === undefined || 
+                        answer.value === null || 
+                        answer.value === '' || 
+                        (Array.isArray(answer.value) && answer.value.length === 0);
+
+      if (isSkipped) {
+        calcSkipped++;
+      } else {
+        const marksAwarded = Number(answer.evaluation?.marks || 0);
+        if (marksAwarded >= maxMarks) {
+          calcCorrect++;
+        } else if (marksAwarded > 0) {
+          calcPartial++;
+        } else {
+          calcWrong++;
+        }
+      }
+    });
+  }
 
   return (
     <div className="space-y-8">
@@ -46,7 +80,7 @@ export default function ResultDetail() {
         </Glass>
         <Glass className="p-5 border-teal-500/30">
           <p className="text-sm text-teal-400">Final Score</p>
-          <p className="mt-1 font-bold text-2xl text-teal-100">{data.analysis.finalScore}%</p>
+          <p className="mt-1 font-bold text-2xl text-teal-100">{data.analysis.finalScore}</p>
         </Glass>
       </div>
 
@@ -58,19 +92,23 @@ export default function ResultDetail() {
           <div className="space-y-4">
             <div className="flex justify-between py-2 border-b border-white/5">
               <span className="text-slate-400">Total Questions</span>
-              <span className="font-medium">{data.analysis.totalQuestions}</span>
+              <span className="font-medium">{calcTotal}</span>
             </div>
             <div className="flex justify-between py-2 border-b border-white/5">
               <span className="text-emerald-400">Correct Answers</span>
-              <span className="font-medium">{data.analysis.correctAnswers}</span>
+              <span className="font-medium">{calcCorrect}</span>
+            </div>
+            <div className="flex justify-between py-2 border-b border-white/5">
+              <span className="text-blue-400">Partial Answers</span>
+              <span className="font-medium">{calcPartial}</span>
             </div>
             <div className="flex justify-between py-2 border-b border-white/5">
               <span className="text-rose-400">Wrong Answers</span>
-              <span className="font-medium">{data.analysis.wrongAnswers}</span>
+              <span className="font-medium">{calcWrong}</span>
             </div>
             <div className="flex justify-between py-2 border-b border-white/5">
               <span className="text-amber-400">Skipped Questions</span>
-              <span className="font-medium">{data.analysis.skippedQuestions}</span>
+              <span className="font-medium">{calcSkipped}</span>
             </div>
             <div className="flex justify-between py-2 text-lg font-semibold mt-4">
               <span>Final Percentage</span>

@@ -14,10 +14,10 @@ import SummaryStep from './steps/SummaryStep';
 
 const steps = [
   { id: 'instructions', label: 'Instructions', Component: InstructionsStep },
-  { id: 'browser', label: 'Browser Check', Component: BrowserCheckStep },
   { id: 'webcam', label: 'Webcam Check', Component: WebcamCheckStep },
   { id: 'mic', label: 'Microphone Check', Component: MicCheckStep },
   { id: 'screen', label: 'Screen Share Check', Component: ScreenShareStep },
+  { id: 'browser', label: 'Browser Check', Component: BrowserCheckStep },
   { id: 'network', label: 'Network Check', Component: NetworkCheckStep },
   { id: 'photo', label: 'Capture Photo', Component: CapturePhotoStep },
   { id: 'summary', label: 'Verification Summary', Component: SummaryStep },

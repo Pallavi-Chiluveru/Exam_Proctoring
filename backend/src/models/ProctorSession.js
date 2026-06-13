@@ -70,4 +70,7 @@ const sessionSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
+sessionSchema.index({ student: 1, status: 1 });
+sessionSchema.index({ exam: 1, student: 1 });
+
 export const ProctorSession = mongoose.model('ProctorSession', sessionSchema);

@@ -43,10 +43,10 @@ export default function SummaryStep({ onStart, verificationData }) {
           <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
             <h3 className="mb-4 text-lg font-semibold text-white">System Verification</h3>
             <div className="space-y-3">
-              <SummaryCheckItem label="Browser Verified" passed={verificationData.browserVerified} />
               <SummaryCheckItem label="Webcam Verified" passed={verificationData.webcamVerified} />
               <SummaryCheckItem label="Microphone Verified" passed={verificationData.micVerified} />
               <SummaryCheckItem label="Screen Shared" passed={verificationData.screenVerified} />
+              <SummaryCheckItem label="Browser Verified" passed={verificationData.browserVerified} />
               <SummaryCheckItem label="Network Stable" passed={verificationData.networkVerified} extra={verificationData.networkQuality} />
               <SummaryCheckItem label="WebRTC Enabled" passed={verificationData.webrtcVerified} />
               <SummaryCheckItem label="Identity Verified" passed={!!verificationData.candidatePhoto} />

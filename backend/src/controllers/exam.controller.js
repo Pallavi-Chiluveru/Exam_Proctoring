@@ -18,7 +18,7 @@ const examSchema = z.object({
 const calculateSummary = (data) => {
   const summary = {
     totalQuestions: data.questions?.length || 0,
-    totalMarks: data.questions?.reduce((acc, q) => acc + (q.points || 0), 0) || 0,
+    totalMarks: data.questions?.reduce((acc, q) => acc + (q.points !== undefined ? Number(q.points) : 10), 0) || 0,
     questionTypeCounts: { mcq: 0, msq: 0, coding: 0, descriptive: 0 },
     difficultyCounts: { easy: 0, medium: 0, hard: 0 }
   };

@@ -37,6 +37,22 @@ const CustomTooltip = ({ active, payload, label }) => {
   return null;
 };
 
+const TrendIndicator = ({ value, suffix = "%", invertColors = false }) => {
+  const isPositive = value > 0;
+  const isNeutral = value === 0;
+  let colorClass = isPositive ? "text-emerald-400" : isNeutral ? "text-slate-500" : "text-rose-400";
+  if (invertColors) {
+    colorClass = isPositive ? "text-rose-400" : isNeutral ? "text-slate-500" : "text-emerald-400";
+  }
+  
+  return (
+    <div className={`flex items-center text-xs font-semibold ${colorClass}`}>
+      {isPositive ? <TrendingUp className="w-3 h-3 mr-1" /> : isNeutral ? null : <TrendingDown className="w-3 h-3 mr-1" />}
+      {Math.abs(value)}{suffix}
+    </div>
+  );
+};
+
 export default function StudentOverview() {
   const { user } = useAuth();
   
@@ -62,22 +78,6 @@ export default function StudentOverview() {
   const aiInsights = data?.aiInsights || fallbackData.aiInsights;
   const subjectPerformance = data?.subjectPerformance || fallbackData.subjectPerformance;
   const riskHistory = data?.riskHistory || fallbackData.riskHistory;
-
-  const TrendIndicator = ({ value, suffix = "%", invertColors = false }) => {
-    const isPositive = value > 0;
-    const isNeutral = value === 0;
-    let colorClass = isPositive ? "text-emerald-400" : isNeutral ? "text-slate-500" : "text-rose-400";
-    if (invertColors) {
-      colorClass = isPositive ? "text-rose-400" : isNeutral ? "text-slate-500" : "text-emerald-400";
-    }
-    
-    return (
-      <div className={`flex items-center text-xs font-semibold ${colorClass}`}>
-        {isPositive ? <TrendingUp className="w-3 h-3 mr-1" /> : isNeutral ? null : <TrendingDown className="w-3 h-3 mr-1" />}
-        {Math.abs(value)}{suffix}
-      </div>
-    );
-  };
 
   return (
     <div className="space-y-8 pb-12">

@@ -26,7 +26,7 @@ export default function ExamRoom() {
   const [session, setSession] = useState({ _id: 'demo-session', proctor: { suspicionScore: 12 } });
   const [active, setActive] = useState(0);
   const [answers, setAnswers] = useState({});
-  const [seconds, setSeconds] = useState(120 * 60);
+  const [seconds, setSeconds] = useState(null);
   const [violations, setViolations] = useState([]);
   const [locked, setLocked] = useState(false);
   const [codeRunResults, setCodeRunResults] = useState({});
@@ -97,9 +97,25 @@ export default function ExamRoom() {
   }, [session._id, navigate]);
 
   useEffect(() => {
-    const timer = window.setInterval(() => setSeconds((value) => Math.max(0, value - 1)), 1000);
+    if (exam?.durationMinutes && session?.startedAt) {
+      const totalSeconds = exam.durationMinutes * 60;
+      const elapsedSeconds = Math.floor((Date.now() - new Date(session.startedAt).getTime()) / 1000);
+      setSeconds(Math.max(0, totalSeconds - elapsedSeconds));
+    }
+  }, [exam?.durationMinutes, session?.startedAt]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setSeconds((value) => (value === null ? null : Math.max(0, value - 1)));
+    }, 1000);
     return () => window.clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    if (seconds === 0 && !locked) {
+      submit(false); // Auto-submit when time is up
+    }
+  }, [seconds, locked]);
 
   useEffect(() => {
     if (!monitoringEnabled) return undefined;
@@ -134,6 +150,7 @@ export default function ExamRoom() {
   }, [answers, question, session._id, exam.questions?.length, locked]);
 
   const time = useMemo(() => {
+    if (seconds === null) return '--:--';
     const minutes = Math.floor(seconds / 60).toString().padStart(2, '0');
     const rest = (seconds % 60).toString().padStart(2, '0');
     return `${minutes}:${rest}`;

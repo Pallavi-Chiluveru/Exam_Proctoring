@@ -40,4 +40,6 @@ const violationSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
+violationSchema.index({ session: 1 });
+
 export const Violation = mongoose.model('Violation', violationSchema);
