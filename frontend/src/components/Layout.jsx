@@ -77,7 +77,7 @@ export function Layout() {
           ))}
         </nav>
                     <div className="relative mt-auto pt-4 border-t border-white/10">
-  <button className="relative w-full text-left flex items-center gap-2 p-2 rounded-lg hover:bg-white/10 transition-colors bg-white/5 border border-white/10 backdrop-blur-xl" onClick={handleProfileClick}>
+  <div className="relative w-full text-left flex items-center gap-2 p-2 rounded-lg hover:bg-white/10 transition-colors bg-white/5 border border-white/10 backdrop-blur-xl cursor-pointer" onClick={handleProfileClick}>
     {/* Avatar */}
     {user?.picture ? (
       <img src={user.picture} alt="Avatar" className="w-8 h-8 rounded-full object-cover" />
@@ -107,7 +107,7 @@ export function Layout() {
         </ul>
       </div>
     )}
-  </button>
+  </div>
 </div>
 
       </aside>

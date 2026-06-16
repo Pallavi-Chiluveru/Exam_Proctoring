@@ -21,14 +21,10 @@ console.log = (...args) => {
 };
 
 // Also React DevTools sometimes uses console.info
-const originalInfo = console.info;
-console.info = (...args) => {
-  if (args[0]?.includes?.('Download the React DevTools')) return;
-  originalInfo(...args);
-};
+
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
+  <>
     <BrowserRouter>
       <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
         <AuthProvider>
@@ -47,5 +43,6 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         </AuthProvider>
       </GoogleOAuthProvider>
     </BrowserRouter>
-  </React.StrictMode>,
+  </>
 );
+
