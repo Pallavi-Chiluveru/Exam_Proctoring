@@ -1,8 +1,8 @@
+import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { BarChart3, Bell, BookOpenCheck, Code2, LogOut, Radar, Shield, UsersRound, Video, LayoutDashboard, LineChart, ShieldAlert, User as UserIcon, Award, Settings } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { Button } from './ui';
 
 const adminNav = [
   { to: '/admin/exams', label: 'Exams', icon: BookOpenCheck },
@@ -23,19 +23,35 @@ const studentNav = [
 ];
 
 export function Layout() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-  const nav = user?.role === 'admin' ? adminNav : studentNav;
+    const { user, logout } = useAuth();
+    const navigate = useNavigate();
+    const nav = user?.role === 'admin' ? adminNav : studentNav;
+    const [menuOpen, setMenuOpen] = useState(false);
 
-  function handleLogout() {
-    logout();
-    navigate('/login');
-  }
+    function handleLogout() {
+      closeMenu();
+      logout();
+      navigate('/login');
+    }
+
+    function handleProfileClick() {
+      setMenuOpen(!menuOpen);
+    }
+
+    function closeMenu() {
+      setMenuOpen(false);
+    }
+
+    // Helper to navigate to route and close menu
+    function navigateTo(path) {
+      navigate(path);
+      closeMenu();
+    }
 
   return (
     <div className="min-h-screen bg-mesh text-slate-100">
       <div className="fixed inset-0 pointer-events-none noise" />
-      <aside className="fixed left-0 top-0 z-30 hidden h-screen w-72 border-r border-white/10 bg-slate-950/50 p-5 backdrop-blur-2xl lg:block">
+      <aside className="fixed left-0 top-0 z-30 hidden h-screen w-72 border-r border-white/10 bg-slate-950/50 p-5 backdrop-blur-2xl lg:flex flex-col">
         <div className="flex items-center gap-3">
           <div className="grid h-11 w-11 place-items-center rounded-2xl bg-white text-slate-950 shadow-glow">
             <Shield className="h-5 w-5" />
@@ -45,7 +61,7 @@ export function Layout() {
             <p className="text-xs text-slate-400">Proctor Cloud</p>
           </div>
         </div>
-        <nav className="mt-10 space-y-2">
+        <nav className="mt-10 space-y-2 flex-1">
           {nav.map((item) => (
             <NavLink
               key={item.to}
@@ -60,26 +76,40 @@ export function Layout() {
             </NavLink>
           ))}
         </nav>
-        <div className="absolute bottom-5 left-5 right-5">
-          <div className="rounded-2xl border border-white/10 bg-white/6 p-4">
-            <div className="flex items-center gap-3">
-              <div className="grid h-10 w-10 place-items-center rounded-full bg-teal-300/15 text-sm font-bold text-teal-100 overflow-hidden">
-                {user?.avatar?.startsWith('data:') || user?.avatar?.startsWith('http') ? (
-                  <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover" />
-                ) : (
-                  user?.avatar || user?.name?.slice(0, 2)
-                )}
-              </div>
-              <div className="min-w-0">
-                <p className="truncate text-sm font-semibold">{user?.name}</p>
-                <p className="truncate text-xs text-slate-400">{user?.email}</p>
-              </div>
-            </div>
-            <Button variant="ghost" className="mt-4 w-full" onClick={handleLogout}>
-              <LogOut className="h-4 w-4" /> Logout
-            </Button>
-          </div>
-        </div>
+                    <div className="relative mt-auto pt-4 border-t border-white/10">
+  <button className="relative w-full text-left flex items-center gap-2 p-2 rounded-lg hover:bg-white/10 transition-colors bg-white/5 border border-white/10 backdrop-blur-xl" onClick={handleProfileClick}>
+    {/* Avatar */}
+    {user?.picture ? (
+      <img src={user.picture} alt="Avatar" className="w-8 h-8 rounded-full object-cover" />
+    ) : (
+      <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-sm text-white">
+        {user?.name?.[0] ?? ''}
+      </div>
+    )}
+    {/* Name & Email */}
+    <div className="flex flex-col flex-1 min-w-0">
+      <p className="truncate text-sm font-semibold text-white">{user?.name}</p>
+      <p className="truncate text-xs text-slate-400">{user?.email}</p>
+    </div>
+    {/* Chevron */}
+
+    {/* Dropdown */}
+    {menuOpen && (
+      <div className="absolute bottom-full mb-2 left-0 w-full z-[9999] rounded-xl border border-white/10 bg-slate-900 shadow-2xl backdrop-blur-md">
+        <ul className="py-1">
+          <li>
+            <button onClick={() => navigateTo(user?.role === 'admin' ? '/admin' : '/student/dashboard')} className="w-full text-left px-4 py-2 text-sm text-slate-200 hover:bg-white/5">Dashboard</button>
+          </li>
+
+          <li>
+            <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-sm text-slate-200 hover:bg-white/5">Logout</button>
+          </li>
+        </ul>
+      </div>
+    )}
+  </button>
+</div>
+
       </aside>
       <header className="sticky top-0 z-20 border-b border-white/10 bg-slate-950/55 px-4 py-3 backdrop-blur-2xl lg:ml-72">
         <div className="flex items-center justify-between">

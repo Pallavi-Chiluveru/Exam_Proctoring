@@ -14,7 +14,10 @@ import { errorHandler, notFound } from './middleware/error.middleware.js';
 export function createApp() {
   const app = express();
 
-  app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+  app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+  crossOriginOpenerPolicy: false,
+}));
   app.use(cors({ origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173', credentials: true }));
   app.use(express.json({ limit: '8mb' }));
   app.use(morgan('dev'));

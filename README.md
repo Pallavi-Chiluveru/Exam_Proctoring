@@ -9,6 +9,9 @@ Built with modern web technologies, ProctorX enables educational institutions, r
 
 The system utilizes intelligent monitoring mechanisms such as webcam analysis, screen-sharing verification, browser monitoring, face detection, gaze tracking, and behavioral analysis to identify suspicious activities during examinations.
 
+
+![](./architecture.svg)
+
 ---
 
 # ✨ Key Features

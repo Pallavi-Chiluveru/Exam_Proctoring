@@ -2,6 +2,8 @@ import { createContext, useContext, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { api } from '../services/api';
 
+// Added Google OAuth login handling
+
 const AuthContext = createContext(null);
 
 const fallbackUsers = {
@@ -59,6 +61,7 @@ export function AuthProvider({ children }) {
   function logout() {
     localStorage.removeItem('proctorx_token');
     localStorage.removeItem('proctorx_user');
+    sessionStorage.removeItem('examsCache');
     setUser(null);
   }
 
@@ -68,7 +71,22 @@ export function AuthProvider({ children }) {
     setUser(updated);
   }
 
-  const value = useMemo(() => ({ user, loading, login, register, logout, updateUser }), [user, loading]);
+  async function googleLogin(credentialResponse) {
+    setLoading(true);
+    try {
+      const { data } = await api.post('/auth/google', { credential: credentialResponse?.credential });
+      localStorage.setItem('proctorx_token', data.token);
+      localStorage.setItem('proctorx_user', JSON.stringify(data.user));
+      setUser(data.user);
+      toast.success(`Welcome, ${data.user.name}`);
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Google login failed');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const value = useMemo(() => ({ user, loading, login, register, logout, updateUser, googleLogin }), [user, loading]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

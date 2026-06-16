@@ -1,15 +1,24 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Eye, EyeOff, Fingerprint, LockKeyhole, Mail, ShieldCheck, Sparkles } from 'lucide-react';
+import { Eye, EyeOff, Fingerprint, LockKeyhole, Mail, ShieldCheck, Sparkles, Zap } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import toast from 'react-hot-toast';
+
+import { GoogleLogin } from '@react-oauth/google';
 import { Button, Glass, Page } from '../components/ui';
 
 export default function Login() {
-  const { login, register, loading } = useAuth();
-  const [mode, setMode] = useState('login');
+  const { login, register, loading, googleLogin } = useAuth();
+  const location = useLocation();
+  const [mode, setMode] = useState(location.pathname === '/register' ? 'register' : 'login');
   const [form, setForm] = useState({ name: '', email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    setMode(location.pathname === '/register' ? 'register' : 'login');
+  }, [location.pathname]);
 
   function validate() {
     const newErrors = {};
@@ -29,79 +38,143 @@ export default function Login() {
   }
 
   return (
-    <Page className="relative grid overflow-hidden lg:grid-cols-[1.1fr_.9fr]">
-      <section className="relative flex min-h-[48vh] flex-col justify-between p-6 sm:p-10 lg:min-h-screen">
-        <div className="flex items-center gap-3">
-          <div className="grid h-12 w-12 place-items-center rounded-2xl bg-white text-slate-950 shadow-glow">
-            <ShieldCheck className="h-6 w-6" />
-          </div>
-          <div>
-            <p className="text-lg font-semibold">ProctorX</p>
-            <p className="text-sm text-slate-400">Secure AI Assessment</p>
-          </div>
-        </div>
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-3xl py-14">
-          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-teal-200/20 bg-teal-200/10 px-3 py-1 text-sm text-teal-100">
-            <Sparkles className="h-4 w-4" /> AI proctoring, live coding, and enterprise analytics
-          </div>
-          <h1 className="max-w-4xl text-5xl font-semibold tracking-tight text-white sm:text-6xl lg:text-7xl">
-            Secure exams that feel impossibly calm.
-          </h1>
-          <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-300">
-            A premium proctoring command center with real-time webcam signals, violation timelines, Monaco coding rounds, and AI risk scoring.
-          </p>
+    <Page className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-950 p-6 sm:p-10">
+      {/* Background Lighting Effects */}
+      <div className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center">
+        <motion.div 
+          animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute h-[500px] w-[500px] rounded-full bg-teal-500/20 blur-[120px]" 
+        />
+        <motion.div 
+          animate={{ scale: [1.2, 1, 1.2], opacity: [0.2, 0.4, 0.2] }}
+          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute h-[600px] w-[600px] rounded-full bg-blue-600/10 blur-[150px]" 
+        />
+      </div>
+
+      <div className="relative z-10 w-full max-w-md">
+        {/* Logo and Header */}
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8 flex flex-col items-center justify-center text-center"
+        >
+          <h1 className="text-3xl font-bold tracking-tight text-white">ProctorX</h1>
+          <p className="mt-1 text-sm font-medium text-teal-400">Secure AI Assessment</p>
         </motion.div>
-        <div className="grid gap-3 text-sm text-slate-400 sm:grid-cols-3">
-          {['Face intelligence', 'WebRTC monitoring', 'JWT secured APIs'].map((item) => (
-            <div key={item} className="rounded-2xl border border-white/10 bg-white/6 p-4 backdrop-blur-xl">{item}</div>
-          ))}
-        </div>
-      </section>
-      <section className="flex items-center justify-center p-6 sm:p-10">
-        <Glass className="w-full max-w-md p-6 sm:p-8">
-          <div className="mb-6">
-            <p className="text-sm text-slate-400">{mode === 'login' ? 'Welcome back' : 'Create secure identity'}</p>
-            <h2 className="mt-1 text-3xl font-semibold tracking-tight">{mode === 'login' ? 'Sign in to ProctorX' : 'Join ProctorX'}</h2>
-          </div>
-          <form onSubmit={submit} className="space-y-4">
-            {mode === 'register' ? (
-              <label className={`field ${errors.name ? 'has-error' : ''}`}>
-                <span>Name</span>
-                <div>
-                  <Fingerprint className="h-4 w-4 opacity-70" />
-                  <input value={form.name} onChange={(event) => { setForm({ ...form, name: event.target.value }); setErrors({ ...errors, name: null }); }} placeholder="Your name" />
+
+        {/* Authentication Card */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ duration: 0.5, delay: 0.1 }}
+        >
+          <Glass className="relative overflow-hidden p-6 sm:p-8 border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl">
+            {/* Subtle inner card glow */}
+            <div className="pointer-events-none absolute -right-24 -top-24 h-48 w-48 rounded-full bg-teal-500/10 blur-[50px]" />
+            
+            <div className="mb-8 text-center">
+              <h2 className="text-2xl font-semibold tracking-tight text-white">
+                {mode === 'login' ? 'Welcome back' : 'Create an account'}
+              </h2>
+              <p className="mt-2 text-sm text-slate-400">
+                {mode === 'login' ? 'Sign in to access your dashboard' : 'Join the next generation of secure exams'}
+              </p>
+            </div>
+
+            <form onSubmit={submit} className="relative z-10 space-y-5">
+              {mode === 'register' && (
+                <label className={`field ${errors.name ? 'has-error' : ''}`}>
+                  <span className="text-sm font-medium text-slate-300">Name</span>
+                  <div className="mt-1.5 flex items-center rounded-lg border border-white/10 bg-white/5 px-3 py-2 transition-colors focus-within:border-teal-500/50 focus-within:bg-white/10">
+                    <Fingerprint className="h-5 w-5 text-slate-400 mr-2" />
+                    <input 
+                      className="w-full bg-transparent text-white placeholder:text-slate-500 focus:outline-none"
+                      value={form.name} 
+                      onChange={(event) => { setForm({ ...form, name: event.target.value }); setErrors({ ...errors, name: null }); }} 
+                      placeholder="Your full name" 
+                    />
+                  </div>
+                  {errors.name && <p className="mt-1.5 text-xs text-red-400">{errors.name}</p>}
+                </label>
+              )}
+
+              <label className={`field ${errors.email ? 'has-error' : ''}`}>
+                <span className="text-sm font-medium text-slate-300">Email Address</span>
+                <div className="mt-1.5 flex items-center rounded-lg border border-white/10 bg-white/5 px-3 py-2 transition-colors focus-within:border-teal-500/50 focus-within:bg-white/10">
+                  <Mail className="h-5 w-5 text-slate-400 mr-2" />
+                  <input 
+                    className="w-full bg-transparent text-white placeholder:text-slate-500 focus:outline-none"
+                    value={form.email} 
+                    onChange={(event) => { setForm({ ...form, email: event.target.value }); setErrors({ ...errors, email: null }); }} 
+                    placeholder={mode === 'login' ? 'Email Address' : 'Enter your email address'} 
+                  />
                 </div>
-                {errors.name && <p className="mt-1 text-xs text-red-400">{errors.name}</p>}
+                {errors.email && <p className="mt-1.5 text-xs text-red-400">{errors.email}</p>}
               </label>
-            ) : null}
-            <label className={`field ${errors.email ? 'has-error' : ''}`}>
-              <span>Email Address</span>
-              <div>
-                <Mail className="h-4 w-4 opacity-70" />
-                <input value={form.email} onChange={(event) => { setForm({ ...form, email: event.target.value }); setErrors({ ...errors, email: null }); }} placeholder={mode === 'login' ? 'Email Address' : 'Enter your email address'} />
+
+              <label className={`field ${errors.password ? 'has-error' : ''}`}>
+                <span className="text-sm font-medium text-slate-300">Password</span>
+                <div className="mt-1.5 flex items-center rounded-lg border border-white/10 bg-white/5 px-3 py-2 transition-colors focus-within:border-teal-500/50 focus-within:bg-white/10">
+                  <LockKeyhole className="h-5 w-5 text-slate-400 mr-2" />
+                  <input 
+                    className="w-full bg-transparent text-white placeholder:text-slate-500 focus:outline-none"
+                    type={showPassword ? 'text' : 'password'} 
+                    value={form.password} 
+                    onChange={(event) => { setForm({ ...form, password: event.target.value }); setErrors({ ...errors, password: null }); }} 
+                    placeholder="••••••••" 
+                  />
+                  <button 
+                    type="button" 
+                    onClick={() => setShowPassword(!showPassword)} 
+                    className="ml-2 text-slate-400 transition-colors hover:text-white focus:outline-none"
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
+                {errors.password && <p className="mt-1.5 text-xs text-red-400">{errors.password}</p>}
+              </label>
+
+              <Button 
+                className="mt-6 h-12 w-full rounded-lg bg-teal-500 font-semibold text-slate-950 transition-all hover:bg-teal-400 hover:shadow-[0_0_20px_rgba(20,184,166,0.4)]" 
+                loading={loading}
+              >
+                {loading ? (mode === 'login' ? 'Signing In...' : 'Creating Account...') : (mode === 'login' ? 'Sign In' : 'Create Account')}
+              </Button>
+
+              {/* Divider */}
+              <div className="my-6 flex items-center">
+                <div className="flex-1 h-px bg-gradient-to-r from-cyan-500 via-teal-500 to-purple-500 opacity-30" />
+                <span className="mx-3 text-sm text-white/70">OR</span>
+                <div className="flex-1 h-px bg-gradient-to-r from-purple-500 via-teal-500 to-cyan-500 opacity-30" />
               </div>
-              {errors.email && <p className="mt-1 text-xs text-red-400">{errors.email}</p>}
-            </label>
-            <label className={`field ${errors.password ? 'has-error' : ''}`}>
-              <span>Password</span>
-              <div>
-                <LockKeyhole className="h-4 w-4 opacity-70" />
-                <input type={showPassword ? 'text' : 'password'} value={form.password} onChange={(event) => { setForm({ ...form, password: event.target.value }); setErrors({ ...errors, password: null }); }} placeholder="••••••••" />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="ml-auto text-slate-400 hover:text-white transition-colors focus:outline-none">
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
+
+              {/* Google Sign-In Card */}
+              <div className="relative overflow-hidden rounded-[20px] border border-white/10 bg-white/5 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.4)] transition-transform duration-300 hover:scale-105 hover:shadow-[0_12px_48px_rgba(14,165,233,0.4)]">
+                <div className="pointer-events-none absolute inset-0 rounded-[20px] border border-transparent bg-gradient-to-r from-cyan-500 via-teal-500 to-purple-500 opacity-30" />
+                <GoogleLogin
+                  onSuccess={credentialResponse => { googleLogin(credentialResponse); }}
+                  onError={() => { toast.error('Google login failed'); }}
+                  theme="filled"
+                  shape="rectangular"
+                  size="large"
+                />
               </div>
-              {errors.password && <p className="mt-1 text-xs text-red-400">{errors.password}</p>}
-            </label>
-            <Button className="w-full h-[46px] transition-all hover:shadow-[0_0_15px_rgba(94,234,212,0.4)]" loading={loading}>
-              {loading ? (mode === 'login' ? 'Signing In...' : 'Creating Account...') : (mode === 'login' ? 'Sign In' : 'Create Account')}
-            </Button>
-          </form>
-          <button className="mt-5 w-full text-sm text-slate-400 hover:text-white" onClick={() => setMode(mode === 'login' ? 'register' : 'login')}>
-            {mode === 'login' ? 'Need an account? Register' : 'Already have an account? Sign in'}
-          </button>
-        </Glass>
-      </section>
+
+            </form>
+
+            <div className="relative z-10 mt-6 text-center">
+              <button 
+                className="text-sm font-medium text-slate-400 transition-colors hover:text-white" 
+                onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
+              >
+                {mode === 'login' ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
+              </button>
+            </div>
+          </Glass>
+        </motion.div>
+      </div>
     </Page>
   );
 }

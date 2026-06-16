@@ -6,6 +6,8 @@ import { Layout } from './components/Layout';
 
 // Lazy load pages
 const Login = lazy(() => import('./pages/Login'));
+const Home = lazy(() => import('./pages/Home'));
+const AboutPlatform = lazy(() => import('./pages/AboutPlatform'));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 const Monitoring = lazy(() => import('./pages/admin/Monitoring'));
 const ExamManager = lazy(() => import('./pages/admin/ExamManager'));
@@ -40,7 +42,10 @@ export default function App() {
   return (
     <Suspense fallback={<LoadingScreen />}>
       <Routes>
+        <Route path="/" element={user ? <Navigate to={user.role === 'admin' ? '/admin' : '/student/dashboard'} replace /> : <Home />} />
+        <Route path="/about-platform" element={user ? <Navigate to={user.role === 'admin' ? '/admin' : '/student/dashboard'} replace /> : <AboutPlatform />} />
         <Route path="/login" element={user ? <Navigate to={user.role === 'admin' ? '/admin' : '/student/dashboard'} replace /> : <Login />} />
+        <Route path="/register" element={user ? <Navigate to={user.role === 'admin' ? '/admin' : '/student/dashboard'} replace /> : <Login />} />
         <Route
           path="/admin"
           element={
