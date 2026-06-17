@@ -151,17 +151,20 @@ export default function Login() {
               </div>
 
               {/* Google Sign-In Card */}
-              <div className="relative overflow-hidden w-full rounded-[16px] border border-white/10 bg-white/5 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.4)] transition-transform duration-300 hover:scale-105 hover:shadow-[0_12px_48px_rgba(14,165,233,0.4)]">
-                <div className="pointer-events-none absolute inset-0 rounded-[16px] border border-transparent bg-gradient-to-r from-cyan-500 via-teal-500 to-purple-500 opacity-30" />
-                <GoogleLogin
-                  onSuccess={credentialResponse => { googleLogin(credentialResponse); }}
-                  onError={() => { toast.error('Google login failed'); }}
-                  theme="outline"
-                  shape="pill"
-                  size="large"
-                  useOneTap={false}
-                  auto_select={false}
-                />
+              <div className="flex w-full justify-center">
+                <div className="relative inline-flex overflow-hidden rounded-[16px] border border-white/10 bg-white/5 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.4)] transition-transform duration-300 hover:scale-105 hover:shadow-[0_12px_48px_rgba(14,165,233,0.4)]">
+                  <div className="pointer-events-none absolute inset-0 rounded-[16px] border border-transparent bg-gradient-to-r from-cyan-500 via-teal-500 to-purple-500 opacity-30" />
+                  <GoogleLogin
+                    onSuccess={credentialResponse => { googleLogin(credentialResponse); }}
+                    onError={() => { toast.error('Google login failed'); }}
+                    theme="outline"
+                    shape="pill"
+                    size="large"
+                    width="300"
+                    useOneTap={false}
+                    auto_select={false}
+                  />
+                </div>
               </div>
 
             </form>
