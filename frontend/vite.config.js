@@ -5,6 +5,9 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
+    headers: {
+      "Cross-Origin-Opener-Policy": "unsafe-none",
+    },
     proxy: {
       '/api': process.env.VITE_API_URL,
     },
