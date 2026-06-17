@@ -92,7 +92,7 @@ export default function AboutPlatform() {
               Explore Features
               <ArrowRight className="h-5 w-5" />
             </a>
-            <a href="https://github.com/Pallavi-Chiluveru/Exam_Proctoring#architecture" target="_blank" rel="noreferrer" className="h-14 px-8 rounded-full text-lg font-medium text-white border border-slate-700 hover:bg-slate-800/50 hover:border-slate-500 transition-all backdrop-blur-sm flex items-center justify-center">
+            <a href="https://github.com/Pallavi-Chiluveru/Exam_Proctoring/blob/main/architecture.svg" target="_blank" rel="noreferrer" className="h-14 px-8 rounded-full text-lg font-medium text-white border border-slate-700 hover:bg-slate-800/50 hover:border-slate-500 transition-all backdrop-blur-sm flex items-center justify-center">
               View Architecture
             </a>
           </div>
