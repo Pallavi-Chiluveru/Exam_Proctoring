@@ -160,7 +160,7 @@ export default function Login() {
                     theme="outline"
                     shape="pill"
                     size="large"
-                    width="350"
+                    width="400"
                     useOneTap={false}
                     auto_select={false}
                   />
